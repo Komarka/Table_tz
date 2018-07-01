@@ -9,9 +9,17 @@ constructor(props) {
     super(props);
     this.state = {
       data: '',
+      sort:true,
       headers:''
     };
+    this.find=this.find.bind(this);
+this.myData=this.myData.bind(this);
 }
+componentDidMount(){
+  localStorage.clear();
+}
+
+
 //sending data
 	send(e){
 let select=e.target.previousSibling.children[1];
@@ -21,6 +29,7 @@ let headers=data.shift();
 headers=Object.values(headers);//getting headers for the table
 
  this.setState({data,headers});
+localStorage.setItem('data',JSON.stringify(data));
  e.target.parentNode.removeChild(e.target);
   select.parentNode.removeChild(select);
 
@@ -43,72 +52,53 @@ headers=Object.values(headers);//getting headers for the table
                  result.innerHTML=`This row has following values: ${data.join(', ')}`;
 
 							}else if(e.target.tagName==="TH"){
-
+                self.setState({sort:!self.state.sort})
 								self.sortTable(e.target.textContent);
 							}
 		}
 	}
 
 	sortTable(name){
-		let table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
 		let n='';
 		if(name==='Идентификатор'){
-			n=0;
+			n='id';
 		}else if(name==='Название'){
-			n=1;
+			n='name';
 		}else if(name==='Стоимость'){
-			n=2;
+			n='price';
 		}else if(name==='Количество'){
-			n=3;
+			n='quantity';
 		}
-		table = document.getElementsByTagName("table")[0];
-  switching = true;
-  dir = "asc"; 
- 
-  while (switching) {
-  
-    switching = false;
-    rows = table.getElementsByTagName("TR");
-   
-    for (i = 1; i < (rows.length - 1); i++) {
-     
-      shouldSwitch = false;
-     
-      x = rows[i].getElementsByTagName("TD")[n];
-      y = rows[i + 1].getElementsByTagName("TD")[n];
-     
-      if (dir == "asc") {
-        if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
-          
-          shouldSwitch = true;
-          break;
-        }
-      } else if (dir == "desc") {
-        if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
-     
-          shouldSwitch = true;
-          break;
-        }
-      }
-    }
-    if (shouldSwitch) {
-     
-      rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-      switching = true;
-     
-      switchcount ++; 
-    } else {
-      
-      if (switchcount == 0 && dir == "asc") {
-        dir = "desc";
-        switching = true;
-      }
-    }
-  }
+    let{data}=this.state;
+    console.log(data)
+		if(this.state.sort){
+  data=data.sort((a,b)=>{
+   return a[n]>b[n];
+  })
+  this.setState({data})
+}else{
+  data=data.sort((a,b)=>{
+   return a[n]<b[n];
+  })
+  this.setState({data})
+}
 
 	}
 
+myData(){
+  //getting custom data
+let number=prompt('State the number of data you want to receive from 1 to 20');
+number=+number;
+if(!number){
+  //by default will receive 10
+  return smallData();
+}else{
+  //get the custom amount of data
+  let arr=bigData()
+  return arr.slice(0,number+1);
+}
 
+}
 	//getting data from server
 	getData(type='s'){
 		let data='';
@@ -117,33 +107,32 @@ data=smallData();
 		}else if(type==='b'){
 			data=bigData();
 		}else if(type==='m'){
-			data=smallData();
+			data=this.myData();
+
 		}
 
 		return data;
 	}
 
-	find(event){
-let input, filter, table, tr, td, i;
-  input = document.getElementById("myInput");
-  filter = event.target.value;
-  table = document.getElementsByTagName("table")[0];
-  tr = table.getElementsByTagName("tr");
-
-  for (i = 0; i < tr.length; i++) {
-    td = tr[i].getElementsByTagName("td")[0];
-    if (td) {
-      if (td.innerHTML.toUpperCase().indexOf(filter) > -1) {
-        tr[i].style.display = "";
-      } else {
-        tr[i].style.display = "none";
-      }
-    } 
+  find(event){
+    
+    let {data}=this.state;
+    if(event.target.value===''){ // if the search input is empty
+  let data=JSON.parse(localStorage.getItem('data'));
+  this.setState({data})
+}else{
+    
+    data=data.filter(function(item){
+      return item.name.trim().toLowerCase().search(
+        event.target.value.toLowerCase()) !== -1;
+    });
+this.setState({data});
+}
   }
-	}
+
+
 
 render(){
-	console.log(this.state);
 let{data,headers}=this.state;
 let table='';
 if(data !=='' && headers !==''){
